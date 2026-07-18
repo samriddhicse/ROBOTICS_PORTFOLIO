@@ -1,0 +1,693 @@
+###############################################################################
+# COMPLETE ROS2 PACKAGE - robot_controller
+# All files in one place. Create these files in your package.
+###############################################################################
+
+###############################################################################
+# FILE: package.xml
+# Location: PROJECT2_ROS2/src/robot_controller/package.xml
+###############################################################################
+
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>robot_controller</name>
+  <version>1.0.0</version>
+  <description>Complete ROS2 package with nodes, topics, services, actions, lifecycle, TF, parameters</description>
+  <maintainer email="samriddhicse@gmail.com">samriddhicse</maintainer>
+  <license>MIT</license>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>example_interfaces</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+
+###############################################################################
+# FILE: setup.py
+# Location: PROJECT2_ROS2/src/robot_controller/setup.py
+###############################################################################
+
+from setuptools import find_packages, setup
+import os
+from glob import glob
+
+package_name = 'robot_controller'
+
+setup(
+    name=package_name,
+    version='1.0.0',
+    packages=find_packages(exclude=['test']),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='samriddhicse',
+    maintainer_email='samriddhicse@gmail.com',
+    description='Complete ROS2 package with nodes, topics, services, actions, lifecycle, TF, parameters',
+    license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'talker = robot_controller.talker:main',
+            'listener = robot_controller.listener:main',
+            'move_robot = robot_controller.move_robot:main',
+            'add_service = robot_controller.add_service:main',
+            'add_client = robot_controller.add_client:main',
+            'odom_publisher = robot_controller.odom_publisher:main',
+            'sensor_publisher = robot_controller.sensor_publisher:main',
+            'camera_publisher = robot_controller.camera_publisher:main',
+            'parameter_node = robot_controller.parameter_node:main',
+            'tf_publisher = robot_controller.tf_publisher:main',
+            'action_server = robot_controller.action_server:main',
+            'action_client = robot_controller.action_client:main',
+            'lifecycle_node = robot_controller.lifecycle_node:main',
+        ],
+    },
+)
+
+###############################################################################
+# FILE: setup.cfg
+# Location: PROJECT2_ROS2/src/robot_controller/setup.cfg
+###############################################################################
+
+[develop]
+script_dir=$base/lib/robot_controller
+[install]
+install_scripts=$base/lib/robot_controller
+
+###############################################################################
+# FILE: resource/robot_controller
+# Location: PROJECT2_ROS2/src/robot_controller/resource/robot_controller
+###############################################################################
+
+This file is required for ament_python packages.
+
+###############################################################################
+# FILE: robot_controller/__init__.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/__init__.py
+###############################################################################
+
+# This file makes the folder a Python package
+
+###############################################################################
+# FILE: robot_controller/talker.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/talker.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class Talker(Node):
+    def __init__(self):
+        super().__init__('talker')
+        self.publisher = self.create_publisher(String, '/robot_status', 10)
+        self.timer = self.create_timer(1.0, self.publish_status)
+        self.counter = 0
+        self.get_logger().info('✅ Talker node started! Publishing to /robot_status')
+
+    def publish_status(self):
+        self.counter += 1
+        msg = String()
+        msg.data = f"Robot is running... Count: {self.counter}"
+        self.publisher.publish(msg)
+        self.get_logger().info(f'📤 Published: {msg.data}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = Talker()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/listener.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/listener.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class Listener(Node):
+    def __init__(self):
+        super().__init__('listener')
+        self.subscription = self.create_subscription(String, '/robot_status', self.callback, 10)
+        self.get_logger().info('✅ Listener node started! Listening to /robot_status')
+
+    def callback(self, msg):
+        self.get_logger().info(f'📥 Received: {msg.data}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = Listener()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/move_robot.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/move_robot.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+
+class MoveRobot(Node):
+    def __init__(self):
+        super().__init__('move_robot')
+        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.timer = self.create_timer(0.5, self.send_command)
+        self.get_logger().info('✅ Move Robot node started! Publishing to /cmd_vel')
+
+    def send_command(self):
+        msg = Twist()
+        msg.linear.x = 0.2
+        msg.angular.z = 0.1
+        self.publisher.publish(msg)
+        self.get_logger().info('🚀 Moving robot forward...')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = MoveRobot()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/add_service.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/add_service.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from example_interfaces.srv import AddTwoInts
+
+class AddService(Node):
+    def __init__(self):
+        super().__init__('add_service')
+        self.service = self.create_service(AddTwoInts, '/add_two_ints', self.add_callback)
+        self.get_logger().info('✅ Add Service started! Ready to add numbers')
+
+    def add_callback(self, request, response):
+        response.sum = request.a + request.b
+        self.get_logger().info(f'➕ {request.a} + {request.b} = {response.sum}')
+        return response
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = AddService()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/add_client.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/add_client.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from example_interfaces.srv import AddTwoInts
+
+class AddClient(Node):
+    def __init__(self):
+        super().__init__('add_client')
+        self.client = self.create_client(AddTwoInts, '/add_two_ints')
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('⏳ Waiting for service...')
+        self.get_logger().info('✅ Add Client started!')
+        self.timer = self.create_timer(2.0, self.send_request)
+
+    def send_request(self):
+        request = AddTwoInts.Request()
+        request.a = 10
+        request.b = 5
+        future = self.client.call_async(request)
+        future.add_done_callback(self.response_callback)
+        self.get_logger().info(f'📤 Sent: {request.a} + {request.b}')
+
+    def response_callback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f'📥 Response: {response.sum}')
+        except Exception as e:
+            self.get_logger().error(f'❌ Failed: {e}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = AddClient()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/odom_publisher.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/odom_publisher.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Quaternion
+import math
+
+class OdomPublisher(Node):
+    def __init__(self):
+        super().__init__('odom_publisher')
+        self.publisher = self.create_publisher(Odometry, '/odom', 10)
+        self.timer = self.create_timer(0.5, self.publish_odom)
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+        self.get_logger().info('✅ Odom Publisher started! Publishing to /odom')
+
+    def publish_odom(self):
+        msg = Odometry()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'odom'
+        msg.child_frame_id = 'base_link'
+        msg.pose.pose.position.x = self.x
+        msg.pose.pose.position.y = self.y
+        q = Quaternion()
+        q.z = math.sin(self.theta / 2.0)
+        q.w = math.cos(self.theta / 2.0)
+        msg.pose.pose.orientation = q
+        msg.twist.twist.linear.x = 0.2
+        msg.twist.twist.angular.z = 0.1
+        self.publisher.publish(msg)
+        self.x += 0.02
+        self.theta += 0.01
+        self.get_logger().info(f'📍 Odom: x={self.x:.2f}, y={self.y:.2f}, theta={self.theta:.2f}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = OdomPublisher()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/sensor_publisher.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/sensor_publisher.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import LaserScan
+import math
+
+class SensorPublisher(Node):
+    def __init__(self):
+        super().__init__('sensor_publisher')
+        self.publisher = self.create_publisher(LaserScan, '/scan', 10)
+        self.timer = self.create_timer(0.5, self.publish_scan)
+        self.get_logger().info('✅ Sensor Publisher started! Publishing to /scan')
+
+    def publish_scan(self):
+        msg = LaserScan()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'laser_frame'
+        msg.angle_min = -math.pi / 2
+        msg.angle_max = math.pi / 2
+        msg.angle_increment = math.pi / 360
+        msg.range_min = 0.1
+        msg.range_max = 10.0
+        msg.ranges = [3.0 + 0.5 * math.sin(i * 0.1) for i in range(360)]
+        msg.intensities = [1.0] * 360
+        self.publisher.publish(msg)
+        self.get_logger().info('📡 Published LaserScan data')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = SensorPublisher()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/camera_publisher.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/camera_publisher.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from std_msgs.msg import Header
+import numpy as np
+
+class CameraPublisher(Node):
+    def __init__(self):
+        super().__init__('camera_publisher')
+        self.publisher = self.create_publisher(Image, '/camera/image', 10)
+        self.timer = self.create_timer(0.5, self.publish_image)
+        self.get_logger().info('✅ Camera Publisher started! Publishing to /camera/image')
+
+    def publish_image(self):
+        msg = Image()
+        msg.header = Header()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'camera_frame'
+        msg.height = 480
+        msg.width = 640
+        msg.encoding = 'rgb8'
+        msg.is_bigendian = False
+        msg.step = 640 * 3
+        data = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
+        msg.data = data.tobytes()
+        self.publisher.publish(msg)
+        self.get_logger().info('📷 Published camera image')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = CameraPublisher()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/parameter_node.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/parameter_node.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+
+class ParameterNode(Node):
+    def __init__(self):
+        super().__init__('parameter_node')
+        self.declare_parameter('robot_name', 'Robot1')
+        self.declare_parameter('speed', 0.5)
+        self.declare_parameter('debug_mode', False)
+        self.robot_name = self.get_parameter('robot_name').value
+        self.speed = self.get_parameter('speed').value
+        self.debug_mode = self.get_parameter('debug_mode').value
+        self.get_logger().info(f'✅ Parameter Node started!')
+        self.get_logger().info(f'   Robot Name: {self.robot_name}')
+        self.get_logger().info(f'   Speed: {self.speed}')
+        self.get_logger().info(f'   Debug Mode: {self.debug_mode}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ParameterNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/tf_publisher.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/tf_publisher.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import TransformStamped
+from tf2_ros import TransformBroadcaster
+
+class TfPublisher(Node):
+    def __init__(self):
+        super().__init__('tf_publisher')
+        self.broadcaster = TransformBroadcaster(self)
+        self.timer = self.create_timer(0.1, self.broadcast_tf)
+        self.get_logger().info('✅ TF Publisher started!')
+
+    def broadcast_tf(self):
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = 'odom'
+        t.child_frame_id = 'base_link'
+        t.transform.translation.x = 0.5
+        t.transform.translation.y = 0.0
+        t.transform.translation.z = 0.0
+        t.transform.rotation.w = 1.0
+        self.broadcaster.sendTransform(t)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TfPublisher()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/action_server.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/action_server.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionServer
+from example_interfaces.action import Fibonacci
+
+class FibonacciActionServer(Node):
+    def __init__(self):
+        super().__init__('fibonacci_action_server')
+        self.action_server = ActionServer(self, Fibonacci, '/fibonacci', self.execute_callback)
+        self.get_logger().info('✅ Fibonacci Action Server started!')
+
+    def execute_callback(self, goal_handle):
+        goal = goal_handle.request.order
+        self.get_logger().info(f'🎯 Received Fibonacci request: {goal}')
+        feedback_msg = Fibonacci.Feedback()
+        sequence = [0, 1]
+        for i in range(2, goal):
+            sequence.append(sequence[i-1] + sequence[i-2])
+            feedback_msg.sequence = sequence
+            goal_handle.publish_feedback(feedback_msg)
+        result = Fibonacci.Result()
+        result.sequence = sequence
+        goal_handle.succeed()
+        self.get_logger().info(f'✅ Fibonacci complete: {sequence}')
+        return result
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = FibonacciActionServer()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/action_client.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/action_client.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
+from example_interfaces.action import Fibonacci
+
+class FibonacciActionClient(Node):
+    def __init__(self):
+        super().__init__('fibonacci_action_client')
+        self.action_client = ActionClient(self, Fibonacci, '/fibonacci')
+        self.get_logger().info('✅ Fibonacci Action Client started!')
+        self.timer = self.create_timer(3.0, self.send_goal)
+
+    def send_goal(self):
+        goal_msg = Fibonacci.Goal()
+        goal_msg.order = 10
+        self.action_client.wait_for_server()
+        self.send_goal_future = self.action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+        self.send_goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('❌ Goal rejected')
+            return
+        self.get_logger().info('✅ Goal accepted')
+        self.result_future = goal_handle.get_result_async()
+        self.result_future.add_done_callback(self.result_callback)
+
+    def feedback_callback(self, feedback_msg):
+        self.get_logger().info(f'📥 Feedback: {feedback_msg.feedback.sequence}')
+
+    def result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info(f'🎯 Result: {result.sequence}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = FibonacciActionClient()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: robot_controller/lifecycle_node.py
+# Location: PROJECT2_ROS2/src/robot_controller/robot_controller/lifecycle_node.py
+###############################################################################
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.lifecycle import LifecycleNode
+from rclpy.lifecycle import TransitionCallbackReturn
+
+class LifecycleNodeExample(LifecycleNode):
+    def __init__(self):
+        super().__init__('lifecycle_node')
+        self.get_logger().info('🔧 Lifecycle Node created')
+
+    def on_configure(self, state):
+        self.get_logger().info('⚙️ Configuring...')
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state):
+        self.get_logger().info('🚀 Activating...')
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_deactivate(self, state):
+        self.get_logger().info('⏸️ Deactivating...')
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state):
+        self.get_logger().info('🧹 Cleaning up...')
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_shutdown(self, state):
+        self.get_logger().info('🛑 Shutting down...')
+        return TransitionCallbackReturn.SUCCESS
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = LifecycleNodeExample()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
+###############################################################################
+# FILE: launch/launch_all.py
+# Location: PROJECT2_ROS2/src/robot_controller/launch/launch_all.py
+###############################################################################
+
+#!/usr/bin/env python3
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='robot_controller', executable='talker', name='talker', output='screen'),
+        Node(package='robot_controller', executable='listener', name='listener', output='screen'),
+        Node(package='robot_controller', executable='move_robot', name='move_robot', output='screen'),
+        Node(package='robot_controller', executable='add_service', name='add_service', output='screen'),
+        Node(package='robot_controller', executable='add_client', name='add_client', output='screen'),
+        Node(package='robot_controller', executable='odom_publisher', name='odom_publisher', output='screen'),
+        Node(package='robot_controller', executable='sensor_publisher', name='sensor_publisher', output='screen'),
+        Node(package='robot_controller', executable='camera_publisher', name='camera_publisher', output='screen'),
+        Node(package='robot_controller', executable='parameter_node', name='parameter_node', output='screen'),
+        Node(package='robot_controller', executable='tf_publisher', name='tf_publisher', output='screen'),
+        Node(package='robot_controller', executable='action_server', name='action_server', output='screen'),
+        Node(package='robot_controller', executable='action_client', name='action_client', output='screen'),
+        Node(package='robot_controller', executable='lifecycle_node', name='lifecycle_node', output='screen'),
+    ])
+
+###############################################################################
+# FILE: README.md
+# Location: PROJECT2_ROS2/README.md
+###############################################################################
+
+# robot_controller - Complete ROS2 Package
+
+## Nodes (13 total)
+
+| Node | Topic/Service/Action |
+|------|---------------------|
+| talker | /robot_status (publisher) |
+| listener | /robot_status (subscriber) |
+| move_robot | /cmd_vel (publisher) |
+| add_service | /add_two_ints (service server) |
+| add_client | /add_two_ints (service client) |
+| odom_publisher | /odom (publisher) |
+| sensor_publisher | /scan (publisher) |
+| camera_publisher | /camera/image (publisher) |
+| parameter_node | Parameters |
+| tf_publisher | TF transforms |
+| action_server | /fibonacci (action server) |
+| action_client | /fibonacci (action client) |
+| lifecycle_node | Lifecycle states |
+
+## Topics
+- /robot_status
+- /cmd_vel
+- /odom
+- /scan
+- /camera/image
+
+## Services
+- /add_two_ints
+
+## Actions
+- /fibonacci
+
+## Build
+```bash
+cd ~/ROBOTICS_PORTFOLIO/PROJECT2_ROS2
+colcon build --packages-select robot_controller
+source install/setup.bash
