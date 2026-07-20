@@ -11,9 +11,9 @@ TurtleBot3 robot autonomously navigating in Gazebo simulation using ROS2 Navigat
 - RViz2
 
 ## Demo Videos
-- [Video 1: Gazebo Simulation](video1.mp4)
-- [Video 2: RViz2 Path Planning](video2.mp4)
-- [Video 3: Terminal Commands](video3.mp4)
+- [Video 1: Gazebo Simulation]
+- [Video 2: RViz2 Path Planning]
+- [Video 3: Terminal Commands]
 
 ## What I Learned
 - Gazebo simulation
